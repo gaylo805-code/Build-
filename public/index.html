@@ -157,6 +157,39 @@
     box-shadow:0 0 24px rgba(255,0,255,.15)}
   #adminPanel input{background:rgba(6,8,26,.9);border:1px solid rgba(0,255,255,.4);color:#fff;outline:none}
   #adminPanel input:focus{border-color:#0ff;box-shadow:0 0 10px rgba(0,255,255,.35)}
+  /* ===== MINI LIBRARY ===== */
+  #miniLib{margin-top:34px}
+  #miniLib h2{font-size:clamp(20px,4vw,30px);font-weight:900;letter-spacing:3px;
+    background:linear-gradient(90deg,#ff0,#f80,#f0f);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 10px rgba(255,200,0,.6))}
+  #miniTabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+  .mtab{background:rgba(20,24,55,.9);color:#9fb0e0;border:1px solid rgba(0,255,255,.3);border-radius:24px;
+    padding:8px 16px;cursor:pointer;font-weight:700;font-size:13px;transition:.2s}
+  .mtab.on,.mtab:hover{background:linear-gradient(90deg,rgba(0,229,255,.25),rgba(255,0,255,.25));color:#fff;
+    border-color:#0ff;box-shadow:0 0 14px rgba(0,255,255,.4)}
+  #miniGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .mcard{background:linear-gradient(160deg,rgba(25,27,60,.92),rgba(12,13,32,.94));
+    border:1px solid rgba(255,0,255,.25);border-radius:14px;padding:12px 8px;transition:.2s}
+  .mcard:hover{transform:translateY(-5px);border-color:#f0f;box-shadow:0 8px 26px rgba(255,0,255,.3)}
+  .mico{font-size:38px;filter:drop-shadow(0 0 8px rgba(255,255,255,.3))}
+  .mname{font-size:12px;font-weight:800;color:#fff;margin:6px 0 2px}
+  .mdesc{font-size:10px;color:#9aa8d0;min-height:26px}
+  .mhs{font-size:11px;color:#ffe45e;margin:4px 0}
+  .mplay{padding:7px 16px;font-size:11px}
+  /* ===== MODAL ===== */
+  #miniModal{position:fixed;inset:0;z-index:100;background:rgba(2,2,10,.88);display:flex;align-items:center;
+    justify-content:center;padding:8px;backdrop-filter:blur(4px)}
+  #miniBox{background:#0a0c22;border:1px solid rgba(0,255,255,.5);border-radius:18px;padding:12px;
+    box-shadow:0 0 40px rgba(0,255,255,.3);max-width:460px;width:100%;text-align:center;max-height:100dvh;overflow-y:auto}
+  #miniTitle{color:#0ff;font-weight:800;letter-spacing:1px;margin-bottom:8px;text-shadow:0 0 10px rgba(0,255,255,.7)}
+  #miniCanvas{width:min(92vw,400px);height:auto;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#000;touch-action:none}
+  #miniBar{display:flex;gap:8px;justify-content:center;margin:8px 0}
+  #miniPad{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+  #miniPad button{background:rgba(0,255,255,.1);border:1.5px solid rgba(0,255,255,.6);color:#0ff;border-radius:10px;
+    width:52px;height:44px;font-size:18px;font-weight:900;touch-action:none}
+  #miniPad button:active{background:rgba(0,255,255,.4)}
+  @media (max-width:640px){#miniGrid{grid-template-columns:repeat(3,1fr);gap:8px}
+    .mico{font-size:30px}.mname{font-size:10px}.mdesc{font-size:9px}.mcard{padding:8px 4px}}
 </style>
 </head>
 <body>
@@ -186,6 +219,12 @@
     <button class="sbtn" id="btnLogout">⏻ ĐĂNG XUẤT</button>
   </div>
   <div class="cards" id="cards"></div>
+  <div id="miniLib">
+    <h2>🎮 THƯ VIỆN 100 MINI GAME</h2>
+    <div class="sub">Chơi miễn phí — điểm cao lưu trên máy</div>
+    <div id="miniTabs"></div>
+    <div id="miniGrid"></div>
+  </div>
   <div id="adminPanel" class="hidden" style="margin-top:26px;text-align:left">
     <h2 style="color:#f0f;letter-spacing:2px;text-shadow:0 0 10px #f0f">⚙ QUẢN TRỊ (ADMIN)</h2>
     <div style="margin:10px 0">
@@ -211,6 +250,24 @@
   <div class="hintbar" id="hintbar"></div>
 </div>
 
+<div id="miniModal" class="hidden">
+  <div id="miniBox">
+    <div id="miniTitle"></div>
+    <canvas id="miniCanvas" width="420" height="560"></canvas>
+    <div id="miniBar">
+      <button class="tbtn" id="miniRestart">↻ CHƠI LẠI</button>
+      <button class="tbtn" id="miniClose">✖ ĐÓNG</button>
+    </div>
+    <div id="miniPad">
+      <button data-k="ArrowLeft">◀</button>
+      <button data-k="ArrowUp">▲</button>
+      <button data-k="ArrowDown">▼</button>
+      <button data-k="ArrowRight">▶</button>
+      <button data-k="Space" style="width:80px">␣</button>
+    </div>
+  </div>
+</div>
+<script src="mini.js"></script>
 <script>
 "use strict";
 /* ================= CORE ================= */
@@ -1564,6 +1621,8 @@ async function startGame(id){
   document.getElementById('hintbar').textContent=gm.desc;
   buildTouch(gm.controls);
 }
+window.__miniEnd=function(id,score){
+  if(USER){const bonus=Math.min(20,5+(score/20|0));earnCoins(bonus);refreshBar();}};
 function backToMenu(){
   current=null;paused=false;
   document.getElementById('gameScreen').classList.add('hidden');
