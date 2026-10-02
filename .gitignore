@@ -1,0 +1,5 @@
+*
+!.gitignore
+!wrangler.jsonc
+!public/
+!public/**
