@@ -620,6 +620,17 @@ const W_HD=['CHAY','NHAY','BOI','HAT','MUA','VE','DOC'];
 const H_DV=['CONMEO','CONCHO','CONGA','CONLON','CONVOI','CONHO','CONGAAU'.replace(' ','')];
 const H_TC=['QUAXOAI','QUACAM','QUABUOI','QUAMIT','QUATAO','QUANHO'];
 const H_NN=['BACSI','GIAOVIEN','CONGAN','KYSU','NHASI','DAS I'.replace(' ','')];
+
+const QB_LS=[{q:'Vua đầu tiên của VN?',o:['Hùng Vương','An Dương Vương','Lý Nam Đế','Ngô Quyền'],a:0},{q:'Chiến thắng Bạch Đằng 938?',o:['Ngô Quyền','Trần Hưng Đạo','Lê Lợi','Quang Trung'],a:0},{q:'Kinh đô nhà Nguyễn?',o:['Huế','Hà Nội','Thăng Long','Phú Xuân cũ'],a:0},{q:'Khởi nghĩa Lam Sơn do ai?',o:['Lê Lợi','Nguyễn Trãi','Trần Hưng Đạo','Lý Thường Kiệt'],a:0},{q:'Điện Biên Phủ năm nào?',o:['1954','1945','1975','1968'],a:0},{q:'Giải phóng miền Nam?',o:['30/4/1975','2/9/1945','7/5/1954','1/5/1975'],a:0},{q:'Lý Thường Kiệt nổi tiếng với?',o:['Nam quốc sơn hà','Hịch tướng sĩ','Bình Ngô đại cáo','Chiếu dời đô'],a:0},{q:'Chiếu dời đô của ai?',o:['Lý Công Uẩn','Lý Nhân Tông','Trần Thái Tông','Lê Thánh Tông'],a:0}];
+const QB_TT=[{q:'World Cup mấy năm 1 lần?',o:['4','2','3','5'],a:0},{q:'Môn thể thao vua?',o:['Bóng đá','Bóng rổ','Tennis','Bơi'],a:0},{q:'Olympic 2024 ở đâu?',o:['Paris','Tokyo','London','Bắc Kinh'],a:0},{q:'Sân Mỹ Đình ở đâu?',o:['Hà Nội','TP.HCM','Đà Nẵng','Hải Phòng'],a:0},{q:'V-League là giải gì?',o:['Bóng đá VN','Bóng chuyền','Cầu lông','Bóng rổ'],a:0},{q:'Cầu lông dùng gì?',o:['Vợt + cầu','Vợt + bóng','Gậy + bóng','Tay không'],a:0},{q:'Bơi mấy kiểu chính?',o:['4','3','5','6'],a:0},{q:'Marathon dài bao nhiêu km?',o:['42','21','10','50'],a:0}];
+const QB_NHAC=[{q:'Nhạc cụ có phím?',o:['Piano','Guitar','Trống','Sáo'],a:0},{q:'Nhạc cụ gảy dây?',o:['Guitar','Trống','Kèn','Sáo'],a:0},{q:'Dàn nhạc giao hưởng thiếu gì?',o:['Không thiếu gì','Thiếu trống','Thiếu đàn','Thiếu kèn'],a:0},{q:'Bolero xuất xứ từ?',o:['Cuba','Mỹ','Pháp','Nhật'],a:0},{q:'Quan họ quê ở đâu?',o:['Bắc Ninh','Hà Nội','Huế','Nam Định'],a:0},{q:'Ca trù được UNESCO công nhận?',o:['Có','Không'],a:0},{q:'Nhạc rock dùng nhiều?',o:['Guitar điện','Sáo','Đàn tranh','Đàn bầu'],a:0},{q:'Rap chú trọng gì?',o:['Lời + nhịp','Giai điệu','Hòa âm','Nhạc cụ'],a:0}];
+const QB_CN=[{q:'CPU là gì?',o:['Bộ xử lý','Màn hình','Ổ cứng','Chuột'],a:0},{q:'RAM dùng để?',o:['Nhớ tạm','Lưu lâu dài','Hiển thị','Mạng'],a:0},{q:'Ai sáng lập Microsoft?',o:['Bill Gates','Steve Jobs','Elon Musk','Mark'],a:0},{q:'iPhone của hãng nào?',o:['Apple','Samsung','Xiaomi','Oppo'],a:0},{q:'WWW là gì?',o:['Mạng toàn cầu','Máy tính','Phần mềm','Virus'],a:0},{q:'USB dùng để?',o:['Truyền dữ liệu','Nấu ăn','Nghe nhạc','Chụp ảnh'],a:0},{q:'AI là gì?',o:['Trí tuệ nhân tạo','Máy giặt','Tủ lạnh','Xe đạp'],a:0},{q:'Hệ điều hành của PC phổ biến?',o:['Windows','iOS','Android','Linux'],a:0}];
+const W_RAU=['RAUMUONG','RAUDEN','CAICHUA'.replace('CHUA','NGOT'),'BAPCAI','SUPLO','MONGTOI','RAUCAN'];
+const W_NUOC=['TRADA','CAPHE','NUOCAM','SUADA','TRASUA','NUCDUA','COCA'];
+const W_MON=['PHO','COMTAM','BUNBO','BANHMI','CHAGIO','GOICUON','MITOM'];
+const W_BIEN=['CAMAP','CAVOI','MUC','TOM','CUA','SO','NGAO'];
+const H_TRUONG=['THOCAP1'.replace('CAP1','TIEUHOC'),'TRUNGHOC','DAIHOC','GIAOVIEN','HOCSINH','THUVIEN'];
+const H_HOA=['HOAHONG','HOAMAI','HOADAO','HOALAN','HOASEN','HOACUC'];
 const CATS={puzzle:'🧩 Puzzle',arcade:'👾 Arcade',brain:'🧠 Trí tuệ',action:'⚡ Hành động',word:'🔤 Chữ & Số'};
 function g_(id,cat,eng,icon,name,desc,cfg){return Object.assign({id,cat,eng,icon,name,desc},cfg||{});}
 const GAMES=[
@@ -728,7 +739,113 @@ g_('wd-q1','word','seq','🔢','Dãy Số Tiếp Theo','Tìm quy luật dãy s�
 g_('wd-q2','word','seq','🧩','Quy Luật Số','Cấp số cộng/nhân'),
 g_('wd-tf1','word','quiz','📝','Đố Nhanh','Hỏi nhanh đáp gọn',{q:QB_TF,n:8,step:12}),
 g_('wd-fl1','word','flash','📱','Nhớ Số Điện Thoại','Nhớ dãy 5 số',{digits:5}),
+/* ---- PUZZLE +20 ---- */
+g_('pz2-mem1','puzzle','memory','🐣','Lật Thẻ Dễ','Mới chơi bắt đầu đây',{pairs:2,e:'🌟'}),
+g_('pz2-mem2','puzzle','memory','🐤','Lật Thẻ 3 Cặp','Rèn trí nhớ cơ bản',{pairs:3,e:'🌟'}),
+g_('pz2-mem3','puzzle','memory','🦊','Lật Thẻ 4 Cặp','Khó hơn một chút',{pairs:4,e:'🔢'}),
+g_('pz2-mem4','puzzle','memory','🐼','Lật Thẻ 5 Cặp','Thử thách vừa sức',{pairs:5,e:'🔢'}),
+g_('pz2-sim1','puzzle','simon','🟡','Simon Vàng','Dãy màu vàng chói'),
+g_('pz2-sim2','puzzle','simon','🟣','Simon Tím','Màu tím bí ẩn'),
+g_('pz2-sud1','puzzle','sudoku','4️⃣','Sudoku Mới','Bàn cờ mới',{v:2}),
+g_('pz2-sud2','puzzle','sudoku','5️⃣','Sudoku Luyện Tập','Luyện mỗi ngày',{v:3}),
+g_('pz2-min1','puzzle','mines','😱','Dò Mìn Dễ','Chỉ 3 quả mìn',{mines:3}),
+g_('pz2-min2','puzzle','mines','☠️','Dò Mìn Địa Ngục','10 quả mìn!',{mines:10}),
+g_('pz2-sli1','puzzle','slide','1️⃣','Xếp Số Vui','Xếp hình thư giãn'),
+g_('pz2-sli2','puzzle','slide','2️⃣','Xếp Số Pro','Kỷ lục ít bước'),
+g_('pz2-odd1','puzzle','odd','🐝','Tìm Ong Khác','Ong lạc giữa bướm',{pool:['🦋','🐝','🐞','🐜','🪲']}),
+g_('pz2-odd2','puzzle','odd','🚗','Tìm Xe Khác','Xe nào khác biệt',{pool:['🚗','🚕','🚙','🚌','🚎']}),
+g_('pz2-odd3','puzzle','odd','🌸','Tìm Hoa Khác','Hoa lạ giữa vườn',{pool:['🌸','🌺','🌻','🌷','🌹']}),
+g_('pz2-odd4','puzzle','odd','🐠','Tìm Cá Khác','Cá lạ trong đàn',{pool:['🐠','🐟','🐡','🦈','🐙']}),
+g_('pz2-stk1','puzzle','stack','🧱','Thợ Xây','Xây nhà cao tầng'),
+g_('pz2-stk2','puzzle','stack','🏯','Lâu Đài','Xây lâu đài trên mây'),
+g_('pz2-maz1','puzzle','maze','🐁','Chuột Tìm Đường','Mê cung mới',{lv:2}),
+g_('pz2-maz2','puzzle','maze','🧀','Săn Phô Mai','Phô mai cuối đường',{lv:3}),
+/* ---- ARCADE +20 ---- */
+g_('ac2-tap1','arcade','tap','🍩','Bấm Bánh Donut','Ngọt ngào liên tục',{e:'🍩',step:1}),
+g_('ac2-tap2','arcade','tap','🚀','Phóng Tên Lửa','Tap để phóng',{e:'🚀',step:2}),
+g_('ac2-tap3','arcade','tap','🐳','Cá Voi','Bấm cá voi xanh',{e:'🐳',step:1}),
+g_('ac2-tap4','arcade','tap','🎸','Gảy Đàn','Rock hết mình',{e:'🎸',step:1}),
+g_('ac2-tap5','arcade','tap','🍕','Ăn Pizza','Ăn càng nhanh càng tốt',{e:'🍕',step:1}),
+g_('ac2-rea1','arcade','react','🥁','Trống Lệnh','Nghe hiệu lệnh bấm',{e:'NGHE...'}),
+g_('ac2-rea2','arcade','react','🏁','Xuất Phát','Đèn xanh là chạy',{e:'VÀO VỊ TRÍ'}),
+g_('ac2-aim1','arcade','aim','🍩','Bắn Donut','Ngắm trúng vòng ngọt',{e:'🍩',time:30}),
+g_('ac2-aim2','arcade','aim','👻','Bắn Ma','Ma hiện bắn ngay',{e:'👻',time:30}),
+g_('ac2-aim3','arcade','aim','🦟','Đập Muỗi','Muỗi bay vo ve',{e:'🦟',time:25,ammo:40}),
+g_('ac2-aim4','arcade','aim','🦅','Bắn Đại Bàng','Chim bay trên trời',{e:'🦅',time:35,ammo:25}),
+g_('ac2-wh1','arcade','aim','🐀','Đập Chuột Cống','Chuột chạy lung tung',{e:'🐀',mode:'grid',time:30}),
+g_('ac2-wh2','arcade','aim','🦎','Đập Tắc Kè','Tắc kè đổi màu',{e:'🦎',mode:'grid',time:25,gap:32}),
+g_('ac2-inv1','arcade','aim','🛩️','Phòng Không','Bắn máy bay địch',{e:'🛩️',mode:'row',time:40,ammo:40}),
+g_('ac2-inv2','arcade','aim','🦇','Đuổi Dơi','Dơi bay đầy trời',{e:'🦇',mode:'row',time:40,ammo:40}),
+g_('ac2-pon1','arcade','pongw','🏸','Cầu Lông Tường','Đánh cầu nảy tường'),
+g_('ac2-pon2','arcade','pongw','⚾','Bóng Chày Tường','Ném bóng chuẩn'),
+g_('ac2-brk1','arcade','breakm','🪟','Đập Kính','Phá ô kính màu'),
+g_('ac2-slo1','arcade','slots','💎','Slot Kim Cương','Quay trúng kim cương',{pool:['💎','⭐','🍒','🔔','💰']}),
+g_('ac2-brk2','arcade','breakm','🪞','Gương Vỡ','Hứng bóng phá gương'),
+/* ---- TRÍ TUỆ +20 ---- */
+g_('br2-q1','brain','quiz','🏛️','Đố Lịch Sử','Hào khí dân tộc',{q:QB_LS}),
+g_('br2-q2','brain','quiz','⚽','Đố Thể Thao','Sân cỏ tri thức',{q:QB_TT}),
+g_('br2-q3','brain','quiz','🎵','Đố Âm Nhạc','Giai điệu tri thức',{q:QB_NHAC}),
+g_('br2-q4','brain','quiz','💻','Đố Công Nghệ','Thời đại số',{q:QB_CN}),
+g_('br2-tf1','brain','quiz','🧪','Khoa Học Đúng Sai','Niềm tin hay sự thật',{q:QB_KH,n:6,step:15}),
+g_('br2-tf2','brain','quiz','🌍','Địa Lý Đúng Sai','Khám phá thế giới',{q:QB_GEO,n:6,step:15}),
+g_('br2-ttt1','brain','ttt','🏆','Caro Vô Địch','Đánh bại máy khó'),
+g_('br2-rps1','brain','rps','🥷','Oẳn Tù Tì Ninja','Nhanh như ninja'),
+g_('br2-st1','brain','stroop','🔥','Màu Tốc Độ','Đọc màu siêu nhanh'),
+g_('br2-cup1','brain','cups','🎩','Ảo Thuật Cốc','Mắt không rời bóng'),
+g_('br2-cup2','brain','cups','🃏','Cốc Ma Thuật','Tráo đổi chóng mặt'),
+g_('br2-fl1','brain','flash','📞','Nhớ Số 4 Chữ Số','Như nhớ SĐT',{digits:4}),
+g_('br2-fl2','brain','flash','🔐','Nhớ Mật Mã','Mật mã 6 số',{digits:6}),
+g_('br2-sim1','brain','simon','🌟','Simon Siêu Cấp','Dãy cực dài'),
+g_('br2-mem1','brain','memory','🦉','Trí Nhớ Cú Mèo','4 cặp thẻ đêm',{pairs:4,e:'🦉'}),
+g_('br2-mem2','brain','memory','🐘','Trí Nhớ Voi','Nhớ như voi',{pairs:8,e:'🐘'}),
+g_('br2-sq1','brain','seq','➗','Tìm Số Còn Thiếu','Logic dãy số'),
+g_('br2-sq2','brain','seq','✖️','Cấp Số Nhân','Nhân đôi mỗi bước'),
+g_('br2-od1','brain','odd','🔍','Thám Tử Thị Giác','Tìm điểm bất thường',{pool:['🔍','🔎','👓','🕵️','💡']}),
+g_('br2-od2','brain','odd','💡','Bóng Đèn Khác','Bóng nào sáng khác',{pool:['💡','🔦','🕯️','🏮','💈']}),
+/* ---- HÀNH ĐỘNG +20 ---- */
+g_('hd2-do1','action','dodge','❄️','Né Tuyết','Bão tuyết trắng xóa',{e:'❄️',p:'⛷️'}),
+g_('hd2-do2','action','dodge','🍂','Né Lá Rơi','Lá rơi mùa thu',{e:'🍂',p:'🧺'}),
+g_('hd2-do3','action','dodge','💩','Né Bẩn','Tránh bãi bẩn',{e:'💩',p:'🚶'}),
+g_('hd2-do4','action','dodge','🎾','Né Bóng Tennis','Bóng bay vèo vèo',{e:'🎾',p:'🏃'}),
+g_('hd2-ca1','action','catch','🥭','Hứng Xoài','Xoài chín rơi',{e:'🥭',badE:'🪨',p:'🧺'}),
+g_('hd2-ca2','action','catch','🍇','Hứng Nho','Chùm nho ngọt',{e:'🍇',badE:'💣',p:'🧺'}),
+g_('hd2-ca3','action','catch','🥥','Hứng Dừa','Dừa rơi cẩn thận',{e:'🥥',badE:'🧨',p:'🧺'}),
+g_('hd2-ca4','action','catch','🍒','Hứng Cherry','Cherry đỏ mọng',{e:'🍒',badE:'☠️',p:'🧺'}),
+g_('hd2-ju1','action','jump','🐸','Ếch Nhảy','Ếch vượt suối',{e:'🪨',p:'🐸'}),
+g_('hd2-ju2','action','jump','🐎','Ngựa Phi','Phi nước đại',{e:'🪵',p:'🐎'}),
+g_('hd2-ju3','action','jump','🦄','Kỳ Lân Bay','Kỳ lân vượt mây',{e:'☁️',p:'🦄'}),
+g_('hd2-wh1','action','aim','🐛','Đập Sâu','Sâu chui lên',{e:'🐛',mode:'grid',time:30}),
+g_('hd2-wh2','action','aim','🦀','Bắt Cua','Cua bò ngang',{e:'🦀',mode:'grid',time:30}),
+g_('hd2-inv1','action','aim','🎈','Bắn Bóng Rơi','Bóng rơi từ trời',{e:'🎈',mode:'row',time:40,ammo:50}),
+g_('hd2-inv2','action','aim','🍃','Chặn Lá Độc','Lá độc bay',{e:'🍃',mode:'row',time:40,ammo:50}),
+g_('hd2-ra1','action','racer1','🚕','Taxi Tốc Độ','Taxi luồn lách',{c1:'#ff0',c2:'#f33'}),
+g_('hd2-ra2','action','racer1','🚓','Cảnh Sát Rượt Đuổi','Truy bắt tội phạm',{c1:'#08f',c2:'#111'}),
+g_('hd2-stk1','action','stack','📚','Xếp Sách','Xếp sách ngay ngắn'),
+g_('hd2-slo1','action','slots','🔔','Slot Thần Tài','Quay lấy hên',{pool:['🔔','💰','🍒','⭐','🍋']}),
+g_('hd2-rea1','action','react','🏹','Bắn Cung','Buông dây đúng lúc',{e:'CĂNG DÂY...'}),
+/* ---- CHỮ & SỐ +20 ---- */
+g_('wd2-m1','word','math','🟰','Cộng Trong 20','Nền tảng vững chắc',{ops:['+'],max:20}),
+g_('wd2-m2','word','math','🔟','Trừ Trong 20','Trừ nhanh như chớp',{ops:['−'],max:20}),
+g_('wd2-m3','word','math','✖️','Nhân 2 Chữ Số','Nâng cao cửu chương',{ops:['×']}),
+g_('wd2-m4','word','math','➗','Chia Hết','Chia không dư',{ops:['÷']}),
+g_('wd2-g1','word','guess','1️⃣','Đoán Số 1-30','Làm quen suy luận',{max:30,base:100}),
+g_('wd2-g2','word','guess','5️⃣','Đoán Số 1-500','Thử thách lớn',{max:500,base:400}),
+g_('wd2-s1','word','scramble','🥬','Xếp Chữ Rau Củ','Rau xanh mỗi ngày',{words:W_RAU,hint:'rau củ'}),
+g_('wd2-s2','word','scramble','🥤','Xếp Chữ Đồ Uống','Giải khát ngày hè',{words:W_NUOC,hint:'đồ uống'}),
+g_('wd2-s3','word','scramble','🍜','Xếp Chữ Món Ăn','Đặc sản quê hương',{words:W_MON,hint:'món ăn'}),
+g_('wd2-s4','word','scramble','🐟','Xếp Chữ Hải Sản','Quà từ biển cả',{words:W_BIEN,hint:'hải sản'}),
+g_('wd2-h1','word','hang','🏫','Treo Cổ Trường Học','Chuyện học đường',{words:H_TRUONG,hint:'trường học'}),
+g_('wd2-h2','word','hang','🌷','Treo Cổ Loài Hoa','Vườn hoa chữ',{words:H_HOA,hint:'loài hoa'}),
+g_('wd2-h3','word','hang','🐱','Treo Cổ Thú Cưng','Boss quanh ta',{words:H_DV,hint:'con vật'}),
+g_('wd2-q1','word','seq','📈','Dãy Số Tăng Dần','Cộng dồn liên tiếp'),
+g_('wd2-q2','word','seq','📉','Dãy Số Bí Ẩn','Quy luật ẩn giấu'),
+g_('wd2-q3','word','seq','🎲','Số May Mắn','Đoán số tiếp theo'),
+g_('wd2-tf1','word','quiz','🧮','Toán Đúng Sai','Phán đoán phép tính',{q:QB_TOAN,n:6,step:15}),
+g_('wd2-tf2','word','quiz','💻','Công Nghệ Đúng Sai','Hiểu biết số',{q:QB_CN,n:6,step:15}),
+g_('wd2-fl1','word','flash','☎️','Nhớ 2 Số','Khởi động trí nhớ',{digits:2}),
+g_('wd2-fl2','word','flash','📟','Nhớ 6 Số','Siêu trí nhớ',{digits:6}),
 ];
+
 // ================= PLAYER =================
 const KEY={};
 window.addEventListener('keydown',e=>{KEY[e.code]=true;if(G&&G.onKey&&(e.code==='Space'||e.code.startsWith('Arrow')))e.preventDefault();});
