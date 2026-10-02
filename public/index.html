@@ -92,7 +92,7 @@
     <button class="abtn reg" id="btnRegister">📝 ĐĂNG KÝ TÀI KHOẢN MỚI</button>
     <div id="authMsg"></div>
   </div>
-  <div class="sub" style="margin-top:14px">Tài khoản mới được tặng <b style="color:#ff0">100 🪙</b></div>
+  <div class="sub" style="margin-top:14px">Tài khoản mới được tặng <b style="color:#ff0">100 🪙</b><br>Quản trị mặc định: <b style="color:#f0f">admin / admin123</b> (đổi MK sau khi đăng nhập!)</div>
 </div>
 
 <!-- ============ MENU ============ -->
@@ -100,12 +100,21 @@
   <h1 class="logo">NEON <span>ARCADE</span></h1>
   <div class="sub">// CỔNG GAME CYBERPUNK — CHỌN GAME ĐỂ CHƠI //</div>
   <div id="userBar">
-    <span class="pill user">👤 <span id="ubName"></span></span>
+    <span class="pill user">👤 <span id="ubName"></span> <span id="ubRole"></span></span>
     <span class="pill">🪙 <span id="ubCoins"></span></span>
     <button class="sbtn" id="btnDaily">🎁 QUÀ HÀNG NGÀY +50</button>
     <button class="sbtn" id="btnLogout">⏻ ĐĂNG XUẤT</button>
   </div>
   <div class="cards" id="cards"></div>
+  <div id="adminPanel" class="hidden" style="margin-top:26px;text-align:left">
+    <h2 style="color:#f0f;letter-spacing:2px;text-shadow:0 0 10px #f0f">⚙ QUẢN TRỊ (ADMIN)</h2>
+    <div style="margin:10px 0">
+      <input id="admGiveUser" placeholder="Tên user" style="padding:8px;border-radius:8px;border:1px solid #0ff;background:#0a0c22;color:#fff">
+      <input id="admGiveAmt" type="number" value="100" style="width:90px;padding:8px;border-radius:8px;border:1px solid #0ff;background:#0a0c22;color:#fff">
+      <button class="sbtn" id="btnGive">➕ CỘNG COIN</button>
+    </div>
+    <div id="userTable" style="overflow-x:auto"></div>
+  </div>
 </div>
 
 <!-- ============ GAME VIEW ============ -->
@@ -176,13 +185,64 @@ const sfx={
 const COST_PLAY=10, BONUS_DAILY=50;
 let USER=null; // {name,coins,hs:{},lastDaily}
 function loadUsers(){try{return JSON.parse(localStorage.getItem('na_users')||'{}');}catch(e){return{};}}
+function seedAdmin(){
+  const u=loadUsers();
+  if(!u.admin){
+    u.admin={name:'admin',pass:btoa(unescape(encodeURIComponent('admin123'))),coins:9999,hs:{},lastDaily:'',role:'admin'};
+    saveUsers(u);
+  }
+}
 function saveUsers(u){localStorage.setItem('na_users',JSON.stringify(u));}
 function persist(){if(!USER)return;const u=loadUsers();u[USER.name]=USER;saveUsers(u);refreshBar();}
 function refreshBar(){
   if(!USER)return;
   document.getElementById('ubName').textContent=USER.name;
   document.getElementById('ubCoins').textContent=USER.coins;
+  document.getElementById('ubRole').textContent=USER.role==='admin'?'[ADMIN]':'[MEMBER]';
+  const ap=document.getElementById('adminPanel');
+  if(USER.role==='admin'){ap.classList.remove('hidden');renderAdmin();}
+  else ap.classList.add('hidden');
 }
+function renderAdmin(){
+  const u=loadUsers();
+  let h='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:#0ff"><th style="border:1px solid #234;padding:6px">User</th><th style="border:1px solid #234;padding:6px">Role</th><th style="border:1px solid #234;padding:6px">Coin</th><th style="border:1px solid #234;padding:6px">Thao tác</th></tr>';
+  for(const n in u){
+    h+='<tr><td style="border:1px solid #234;padding:6px">'+n+'</td><td style="border:1px solid #234;padding:6px">'+(u[n].role||'member')+'</td><td style="border:1px solid #234;padding:6px;color:#ff0">'+u[n].coins+'</td><td style="border:1px solid #234;padding:6px;white-space:nowrap">'
+      +'<button class="sbtn" onclick="admReset(\''+n+'\')">🔑 Reset MK</button> '
+      +(n!=='admin'?'<button class="sbtn" onclick="admDel(\''+n+'\')">🗑 Xóa</button> ':'')
+      +(u[n].role!=='admin'?'<button class="sbtn" onclick="admRole(\''+n+'\',\'admin\')">⬆ Admin</button>':'<button class="sbtn" onclick="admRole(\''+n+'\',\'member\')">⬇ Member</button>')
+      +'</td></tr>';
+  }
+  document.getElementById('userTable').innerHTML=h+'</table>';
+}
+function admReset(n){
+  const u=loadUsers();if(!u[n])return;
+  const np=prompt('Nhập mật khẩu mới cho "'+n+'":');
+  if(!np||np.length<4){alert('Mật khẩu tối thiểu 4 ký tự!');return;}
+  u[n].pass=btoa(unescape(encodeURIComponent(np)));saveUsers(u);renderAdmin();alert('Đã reset mật khẩu cho '+n);
+}
+function admDel(n){
+  if(n==='admin'){alert('Không được xóa tài khoản admin gốc!');return;}
+  if(!confirm('Xóa user "'+n+'"?'))return;
+  const u=loadUsers();delete u[n];saveUsers(u);
+  if(USER&&USER.name===n){USER=null;}
+  renderAdmin();refreshBar();
+}
+function admRole(n,r){
+  const u=loadUsers();if(!u[n])return;
+  u[n].role=r;saveUsers(u);
+  if(USER&&USER.name===n)USER.role=r;
+  renderAdmin();refreshBar();
+}
+document.getElementById('btnGive').onclick=()=>{
+  const n=document.getElementById('admGiveUser').value.trim();
+  const amt=+document.getElementById('admGiveAmt').value||0;
+  const u=loadUsers();
+  if(!u[n]){alert('Không tìm thấy user "'+n+'"!');return;}
+  u[n].coins+=amt;saveUsers(u);
+  if(USER&&USER.name===n)USER.coins=u[n].coins;
+  renderAdmin();refreshBar();alert('Đã cộng '+amt+' coin cho '+n);
+};
 function authMsg(t){document.getElementById('authMsg').textContent=t;}
 document.getElementById('btnRegister').onclick=()=>{
   const n=document.getElementById('authUser').value.trim();
@@ -191,7 +251,7 @@ document.getElementById('btnRegister').onclick=()=>{
   if(p.length<4){authMsg('Mật khẩu tối thiểu 4 ký tự!');return;}
   const u=loadUsers();
   if(u[n]){authMsg('Tên này đã có người dùng!');return;}
-  u[n]={name:n,pass:btoa(unescape(encodeURIComponent(p))),coins:100,hs:{},lastDaily:''};
+  u[n]={name:n,pass:btoa(unescape(encodeURIComponent(p))),coins:100,hs:{},lastDaily:'',role:'member'};
   saveUsers(u);authMsg('');enterAs(n);
 };
 document.getElementById('btnLogin').onclick=()=>{
@@ -836,6 +896,7 @@ function loop(){
   current.update();current.draw();
 }
 (function init(){
+  seedAdmin();
   const sess=localStorage.getItem('na_session');
   const u=loadUsers();
   if(sess&&u[sess]){enterAs(sess);}
