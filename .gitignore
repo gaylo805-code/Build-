@@ -3,3 +3,4 @@
 !wrangler.jsonc
 !public/
 !public/**
+!worker.js

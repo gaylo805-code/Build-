@@ -1,7 +1,17 @@
 {
+  // ===== CÁCH BẬT SERVER (chỉ làm 1 lần) =====
+  // 1. Vào Cloudflare Dashboard → Workers & Pages → KV → Create namespace (tên: neon-kv)
+  // 2. Bấm vào namespace vừa tạo, copy ID, dán thay cho "REPLACE_WITH_KV_ID" bên dưới
+  // 3. Push code — Workers tự deploy, web sẽ dùng API server thay vì localStorage
+  // (Chưa điền KV ID thì web vẫn chạy bình thường bằng localStorage trên máy từng người)
   "name": "build",
   "compatibility_date": "2026-10-02",
+  "main": "./worker.js",
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+    "not_found_handling": "single-page-application"
+  },
+  "kv_namespaces": [
+    { "binding": "KV", "id": "REPLACE_WITH_KV_ID" }
+  ]
 }

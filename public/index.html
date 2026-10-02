@@ -58,6 +58,33 @@
   .tb.wide{width:150px;height:64px;font-size:16px}
   .blank{visibility:hidden}
   .hintbar{text-align:center;color:#5f6f9f;font-size:11px;letter-spacing:2px;padding-bottom:10px}
+  /* ===== MOBILE OPTIMIZE ===== */
+  #topBar{position:sticky;top:0;z-index:50;background:rgba(5,5,15,.92);backdrop-filter:blur(6px)}
+  #touchUI{position:sticky;bottom:0;z-index:50;background:rgba(5,5,15,.85);backdrop-filter:blur(6px)}
+  @media (max-width:640px){
+    #menuScreen{padding:16px 10px 40px}
+    .logo{letter-spacing:3px}
+    .sub{font-size:11px;margin:6px 0 14px}
+    .cards{grid-template-columns:repeat(2,1fr);gap:10px}
+    .card{padding:12px 8px;border-radius:12px}
+    .card canvas{width:56px;height:56px}
+    .card h3{font-size:12px;margin:8px 0 2px}
+    .card p{font-size:10px;min-height:28px}
+    .hs{font-size:11px;margin:6px 0}
+    .cost{font-size:10px}
+    .play{padding:8px 12px;font-size:11px;letter-spacing:1px}
+    .tbtn{padding:7px 10px;font-size:12px}
+    #gameName{font-size:13px}
+    #gameCanvas{width:min(100vw - 8px,calc((100dvh - 250px)*0.6667));max-height:calc(100dvh - 250px)}
+    .dpad{grid-template-columns:64px 64px 64px;grid-template-rows:64px 64px 64px}
+    .tb{font-size:26px}
+    .tb.big{width:104px;height:104px}
+    .tb.wide{width:44vw;max-width:180px;height:72px}
+    .tzone{justify-content:space-around}
+    #userBar{gap:6px}
+    .pill,.sbtn{font-size:11px;padding:5px 10px}
+    .authbox{padding:20px 14px}
+  }
   /* ===== AUTH ===== */
   #authScreen{max-width:420px;margin:0 auto;padding:60px 20px;text-align:center}
   .authbox{background:rgba(15,16,40,.9);border:1px solid rgba(255,0,255,.4);border-radius:18px;padding:28px 24px;
@@ -183,6 +210,21 @@ const sfx={
 
 /* ================= AUTH + COINS ================= */
 const COST_PLAY=10, BONUS_DAILY=50;
+let SERVER=false, TOKEN=localStorage.getItem('na_token')||'';
+async function api(path,body){
+  const o={method:body?'POST':'GET',headers:{'Content-Type':'application/json'}};
+  if(TOKEN)o.headers.Authorization='Bearer '+TOKEN;
+  if(body)o.body=JSON.stringify(body);
+  const r=await fetch('/api'+path,o);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||('Lỗi '+r.status));
+  return j;
+}
+async function earnCoins(n){ if(SERVER&&TOKEN){ try{const j=await api('/earn',{amount:n}); USER.coins=j.coins;}catch(e){ USER.coins+=n; } } else if(USER){ USER.coins+=n; } persist(); }
+async function spendCoins(n){
+  if(SERVER&&TOKEN){ const j=await api('/spend',{amount:n}); USER.coins=j.coins; persist(); return true; }
+  if(USER.coins<n)return false; USER.coins-=n; persist(); return true;
+}
 let USER=null; // {name,coins,hs:{},lastDaily}
 function loadUsers(){try{return JSON.parse(localStorage.getItem('na_users')||'{}');}catch(e){return{};}}
 function seedAdmin(){
@@ -193,7 +235,7 @@ function seedAdmin(){
   }
 }
 function saveUsers(u){localStorage.setItem('na_users',JSON.stringify(u));}
-function persist(){if(!USER)return;const u=loadUsers();u[USER.name]=USER;saveUsers(u);refreshBar();}
+function persist(){if(!USER)return;if(!SERVER){const u=loadUsers();u[USER.name]=USER;saveUsers(u);}refreshBar();}
 function refreshBar(){
   if(!USER)return;
   document.getElementById('ubName').textContent=USER.name;
@@ -203,8 +245,9 @@ function refreshBar(){
   if(USER.role==='admin'){ap.classList.remove('hidden');renderAdmin();}
   else ap.classList.add('hidden');
 }
-function renderAdmin(){
-  const u=loadUsers();
+async function renderAdmin(){
+  let u=loadUsers();
+  if(SERVER&&TOKEN){try{const j=await api('/admin/users');u={};for(const x of j.users)u[x.name]={...x};}catch(e){}}
   let h='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:#0ff"><th style="border:1px solid #234;padding:6px">User</th><th style="border:1px solid #234;padding:6px">Role</th><th style="border:1px solid #234;padding:6px">Coin</th><th style="border:1px solid #234;padding:6px">Thao tác</th></tr>';
   for(const n in u){
     h+='<tr><td style="border:1px solid #234;padding:6px">'+n+'</td><td style="border:1px solid #234;padding:6px">'+(u[n].role||'member')+'</td><td style="border:1px solid #234;padding:6px;color:#ff0">'+u[n].coins+'</td><td style="border:1px solid #234;padding:6px;white-space:nowrap">'
@@ -214,6 +257,9 @@ function renderAdmin(){
       +'</td></tr>';
   }
   document.getElementById('userTable').innerHTML=h+'</table>';
+  try{const j=await api('/board');let b='<h3 style="color:#ff0;margin:14px 0 6px">🏆 BẢNG XẾP HẠNG</h3><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="color:#0ff"><th style="border:1px solid #234;padding:6px">#</th><th style="border:1px solid #234;padding:6px">User</th><th style="border:1px solid #234;padding:6px">Tổng điểm</th><th style="border:1px solid #234;padding:6px">Coin</th></tr>';
+  j.board.forEach((r,i)=>{b+='<tr><td style="border:1px solid #234;padding:6px">'+(i+1)+'</td><td style="border:1px solid #234;padding:6px">'+r.name+'</td><td style="border:1px solid #234;padding:6px;color:#0f6">'+r.total+'</td><td style="border:1px solid #234;padding:6px;color:#ff0">'+r.coins+'</td></tr>';});
+  document.getElementById('userTable').innerHTML+=b+'</table>';}catch(e){}
 }
 function admReset(n){
   const u=loadUsers();if(!u[n])return;
@@ -244,9 +290,10 @@ document.getElementById('btnGive').onclick=()=>{
   renderAdmin();refreshBar();alert('Đã cộng '+amt+' coin cho '+n);
 };
 function authMsg(t){document.getElementById('authMsg').textContent=t;}
-document.getElementById('btnRegister').onclick=()=>{
+document.getElementById('btnRegister').onclick=async()=>{
   const n=document.getElementById('authUser').value.trim();
   const p=document.getElementById('authPass').value;
+  if(SERVER){try{const j=await api('/register',{name:n,pass:p});TOKEN=j.token;localStorage.setItem('na_token',TOKEN);authMsg('');enterAs(j.user,true);return;}catch(e){authMsg(e.message);return;}}
   if(n.length<3){authMsg('Tên đăng nhập tối thiểu 3 ký tự!');return;}
   if(p.length<4){authMsg('Mật khẩu tối thiểu 4 ký tự!');return;}
   const u=loadUsers();
@@ -254,29 +301,31 @@ document.getElementById('btnRegister').onclick=()=>{
   u[n]={name:n,pass:btoa(unescape(encodeURIComponent(p))),coins:100,hs:{},lastDaily:'',role:'member'};
   saveUsers(u);authMsg('');enterAs(n);
 };
-document.getElementById('btnLogin').onclick=()=>{
+document.getElementById('btnLogin').onclick=async()=>{
   const n=document.getElementById('authUser').value.trim();
   const p=document.getElementById('authPass').value;
+  if(SERVER){try{const j=await api('/login',{name:n,pass:p});TOKEN=j.token;localStorage.setItem('na_token',TOKEN);authMsg('');enterAs(j.user,true);return;}catch(e){authMsg(e.message);return;}}
   const u=loadUsers();
   if(!u[n]||u[n].pass!==btoa(unescape(encodeURIComponent(p)))){authMsg('Sai tên đăng nhập hoặc mật khẩu!');return;}
   authMsg('');enterAs(n);
 };
 document.getElementById('authPass').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btnLogin').click();});
-function enterAs(n){
-  USER=loadUsers()[n];
-  localStorage.setItem('na_session',n);
+function enterAs(n,isObj){
+  USER=isObj?n:loadUsers()[n];
+  if(!isObj)localStorage.setItem('na_session',USER.name);
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('menuScreen').classList.remove('hidden');
   refreshBar();buildMenu();
 }
 document.getElementById('btnLogout').onclick=()=>{
-  persist();USER=null;localStorage.removeItem('na_session');
+  persist();USER=null;TOKEN='';localStorage.removeItem('na_session');localStorage.removeItem('na_token');
   backToMenu();
   document.getElementById('menuScreen').classList.add('hidden');
   document.getElementById('authScreen').classList.remove('hidden');
 };
-document.getElementById('btnDaily').onclick=()=>{
+document.getElementById('btnDaily').onclick=async()=>{
   if(!USER)return;
+  if(SERVER&&TOKEN){try{const j=await api('/daily');USER.coins=j.coins;persist();sfx.power();alert('🎁 Nhận +'+BONUS_DAILY+' coin! Số dư: '+USER.coins);}catch(e){alert(e.message);}return;}
   const today=new Date().toISOString().slice(0,10);
   if(USER.lastDaily===today){alert('Hôm nay bạn đã nhận quà rồi! Quay lại ngày mai nhé 🎁');return;}
   USER.lastDaily=today;USER.coins+=BONUS_DAILY;persist();sfx.power();
@@ -284,8 +333,11 @@ document.getElementById('btnDaily').onclick=()=>{
 };
 
 /* ================= HELPERS ================= */
+async function saveScoreServer(id,score){try{return await api('/hs',{game:id,score});}catch(e){return null;}}
 function saveScore(key,score){
   const id=key.replace(/^hs_/,'');
+  if(SERVER&&TOKEN){saveScoreServer(id,score).then(r=>{if(r&&USER){if(r.isNew)USER.hs[id]=r.hs;refreshBar();}});const old=(USER&&USER.hs[id])||0;return{hs:Math.max(old,score),isNew:score>old};}
+
   const old=(USER&&USER.hs[id])||0;
   const isNew=score>old;
   if(isNew&&USER){USER.hs[id]=score;persist();}
@@ -299,7 +351,7 @@ function gameOver(id,score,g){
     g._awarded=true;
     earned=5+Math.min(45,Math.max(0,score/5|0));
     g._earned=earned;
-    if(USER){USER.coins+=earned;persist();}
+    if(USER)earnCoins(earned);
   }
   return{hs:r.hs,isNew:r.isNew,earned};
 }
@@ -1419,11 +1471,11 @@ function buildTouch(type){
 }
 
 /* ================= FLOW ================= */
-function startGame(id){
+async function startGame(id){
   const gm=GAMES.find(g=>g.id===id);if(!gm||!USER)return;
   const cost=gm.cost||COST_PLAY;
-  if(USER.coins<cost){alert('❌ Hết coin! Nhận quà hàng ngày 🎁 để chơi tiếp. Số dư: '+USER.coins);backToMenu();return;}
-  USER.coins-=cost;persist();
+  try{ if(!await spendCoins(cost))throw new Error(); }
+  catch(e){alert('❌ Hết coin! Nhận quà hàng ngày 🎁 để chơi tiếp. Số dư: '+USER.coins);backToMenu();return;}
   currentId=id;current=gm.create();paused=false;
   for(const k in keys)keys[k]=false;
   document.getElementById('menuScreen').classList.add('hidden');
@@ -1465,6 +1517,12 @@ function loop(){
   current.update();current.draw();
 }
 (function init(){
+  fetch('/api/health').then(r=>r.json()).then(async j=>{
+    if(j&&j.ok){SERVER=true;
+      if(TOKEN){try{const m=await api('/me');enterAs(m.user,true);}catch(e){TOKEN='';localStorage.removeItem('na_token');}}
+      if(USER)refreshBar();
+    }
+  }).catch(()=>{});
   seedAdmin();
   const sess=localStorage.getItem('na_session');
   const u=loadUsers();
