@@ -2,6 +2,8 @@
 !.gitignore
 !wrangler.jsonc
 !worker.js
+!public/
+!public/**
 !decompiler/
 !decompiler/**
 !server.js

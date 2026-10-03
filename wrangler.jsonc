@@ -1,10 +1,12 @@
 {
-  // API only — frontend (public/) đã xóa, chỉ giữ worker.js + KV
-  // Deploy: npx wrangler kv namespace create KV -> copy id vào bên dưới
-  // Sau đó: npx wrangler deploy
+  // NEON ARCADE: worker.js (API /api/*) + public/ (frontend tĩnh)
   "name": "freepc",
   "compatibility_date": "2026-10-02",
   "main": "./worker.js",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
   "kv_namespaces": [
     { "binding": "KV", "id": "2821f488006c43b4a57f4e7d696328b7" }
   ]
