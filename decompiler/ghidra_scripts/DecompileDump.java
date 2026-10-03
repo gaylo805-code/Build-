@@ -1,10 +1,9 @@
 // DecompileDump.java — Ghidra headless post-script.
 // Usage: analyzeHeadless <projdir> <proj> -import <binary> -postScript DecompileDump.java <outdir> -deleteProject -scriptPath <scriptdir>
-// Dumps each function's decompiled C into <outdir>/<func>.c + _index.txt listing all functions.
+// Chỉ tạo đúng 1 file <outdir>/_full.c: toàn bộ hàm đã lọc, đúng thứ tự địa chỉ.
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
-import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionIterator;
 import java.io.File;
@@ -27,10 +26,9 @@ public class DecompileDump extends GhidraScript {
         DecompInterface decomp = new DecompInterface();
         decomp.openProgram(currentProgram);
 
-        StringBuilder index = new StringBuilder();
         // Giữ lại (địa chỉ, tên, code) để dựng file tổng hợp đúng thứ tự gốc.
         List<String[]> ordered = new ArrayList<>();
-        int count = 0, failed = 0;
+        int count = 0, failed = 0, done = 0;
         FunctionIterator funcs = currentProgram.getFunctionManager().getFunctions(true);
         while (funcs.hasNext() && !monitor.isCancelled()) {
             Function f = funcs.next();
@@ -50,25 +48,13 @@ public class DecompileDump extends GhidraScript {
                     continue;
                 }
                 ordered.add(new String[]{f.getEntryPoint().toString(), name, code});
-                String safe = f.getName().replaceAll("[^a-zA-Z0-9_.$-]", "_");
-                File out = new File(outDir, safe + ".c");
-                // Avoid collisions (overloads / same names).
-                int dup = 1;
-                while (out.exists()) {
-                    out = new File(outDir, safe + "__" + (dup++) + ".c");
-                }
-                try (FileWriter w = new FileWriter(out)) {
-                    w.write("// " + name + "\n// addr: " + f.getEntryPoint() + "\n\n");
-                    w.write(code);
-                }
                 count++;
             } else {
                 failed++;
             }
-            index.append(f.getEntryPoint()).append("  ").append(name).append("\n");
-            if ((count + failed) % 200 == 0) println("DecompileDump: " + (count + failed) + " functions...");
+            if ((++done % 200) == 0) println("DecompileDump: " + done + " functions...");
         }
-        // File tổng hợp: toàn bộ hàm sắp xếp theo địa chỉ (gần thứ tự bố cục gốc nhất có thể).
+        // File duy nhất: toàn bộ hàm sắp xếp theo địa chỉ (gần thứ tự bố cục gốc nhất).
         ordered.sort(Comparator.comparing(a -> a[0]));
         try (FileWriter w = new FileWriter(new File(outDir, "_full.c"))) {
             w.write("// FULL DECOMPILATION — " + currentProgram.getName() + "\n");
@@ -79,10 +65,6 @@ public class DecompileDump extends GhidraScript {
                 w.write(e[2]);
                 w.write("\n\n");
             }
-        }
-        try (FileWriter w = new FileWriter(new File(outDir, "_index.txt"))) {
-            w.write("decompiled=" + count + " failed=" + failed + "\n\n");
-            w.write(index.toString());
         }
         println("DecompileDump done: decompiled=" + count + " failed=" + failed);
         decomp.dispose();

@@ -169,12 +169,10 @@ function upload(file) {
       JOB_ID = j.jobId; TREE = j.tree;
       flatten(TREE); renderTree($('search').value);
       st.className = 'ok';
-      st.textContent = `✔ ${file.name}: ${j.fileCount} files (job ${JOB_ID.slice(0,8)}…)`;
-      if (j.native) showText('native-info.txt',
-        `ARCH: ${j.native.file}\n\nIMPORTS (${(j.native.imports||[]).length} funcs):\n${(j.native.imports||[]).join('\n')}` +
-        `\n\nDISASSEMBLY (.text, Intel, top 600 lines):\n${j.native.disasm||'(none)'}` +
-        `\n\nSECTIONS:\n${j.native.sections||''}` +
-        `\n\nSTRINGS (top 200):\n${j.native.strings.join('\n')}`, 'plaintext');
+      st.textContent = `✔ ${file.name}: ${j.fileCount} file (job ${JOB_ID.slice(0,8)}…)`;
+      // Native: server chỉ trả 1 file _full.c — mở xem và bật nút tải luôn.
+      const full = (j.tree.children || []).find(c => c.type === 'file' && c.path === '_full.c');
+      if (full) { loadFile('_full.c'); }
     } catch (err) { st.className = 'err'; st.textContent = '✖ ' + err.message; }
     setTimeout(() => bar.style.display = 'none', 800);
   };
@@ -260,7 +258,7 @@ function showText(name, content, lang) {
   CUR = name;
   $('btnDl').disabled = false;
   // Nút tải _full.c chỉ bật khi job có thư mục ghidra.
-  $('btnDlFull').disabled = !(ALL_FILES.some(f => f.path === 'ghidra/_full.c'));
+  $('btnDlFull').disabled = !(ALL_FILES.some(f => f.path === '_full.c'));
 }
 // Tải 1 file bất kỳ từ job hiện tại qua endpoint /api/download (attachment).
 function download(relPath) {
@@ -272,7 +270,7 @@ function download(relPath) {
 }
 let CUR = null; // file đang xem
 $('btnDl').onclick = () => download(CUR);
-$('btnDlFull').onclick = () => download('ghidra/_full.c');
+$('btnDlFull').onclick = () => download('_full.c');
 </script>
 </body>
 </html>

@@ -213,14 +213,10 @@ app.post('/api/decompile', upload.single('file'), async (req, res) => {
     let native = null;
 
     if (ext === '.so' || ext === '.bin' || ext === '.odex' || ext === '.oat' || ext === '.o' || ext === '.elf') {
-      // Native/raw binary: no Java sources guaranteed — return strings/arch intel + best-effort jadx.
-      native = await analyzeNative(req.file.path);
-      try { await runJadx(req.file.path, outDir); } catch {}
-      // Full decompile with Ghidra headless (slow: minutes). Failure is non-fatal:
-      // static analysis above still returns. Result lands in output/ghidra/*.c.
+      // Native (ELF/.so/.bin...): không phân tích gì thêm — chỉ dịch Ghidra ra 1 file _full.c.
       meta.status = 'running:ghidra';
       try {
-        await runGhidra(req.file.path, path.join(outDir, 'ghidra'));
+        await runGhidra(req.file.path, outDir);
         meta.ghidra = true;
       } catch (err) {
         meta.ghidra = false;
