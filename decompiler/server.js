@@ -35,6 +35,11 @@ const MAX_FILE_MB = Number(process.env.MAX_FILE_MB || 100);
 const JOB_TTL_MIN = Number(process.env.JOB_TTL_MIN || 30); // auto-cleanup threshold
 const JADX_BIN = process.env.JADX_BIN || '/opt/jadx/bin/jadx';
 const JADX_TIMEOUT_MS = Number(process.env.JADX_TIMEOUT_MS || 5 * 60 * 1000); // 5 min/job
+// Ghidra headless decompiler for native binaries (ELF/.so/.bin). Heavy: minutes per file.
+const GHIDRA_DIR = process.env.GHIDRA_DIR || '/opt/ghidra_12.1.4_PUBLIC';
+const GHIDRA_SCRIPTS = path.join(__dirname, 'ghidra_scripts');
+const GHIDRA_TIMEOUT_MS = Number(process.env.GHIDRA_TIMEOUT_MS || 8 * 60 * 1000); // 8 min/job
+const GHIDRA_MAX_FUNCS_BYTES = 20 * 1024 * 1024; // cap decompiled output kept on disk
 
 for (const d of [UPLOAD_DIR, JOBS_DIR]) fs.mkdirSync(d, { recursive: true });
 
@@ -118,7 +123,44 @@ async function runJadx(inputFile, outDir) {
   await execFileAsync(JADX_BIN, args, { timeout: JADX_TIMEOUT_MS, maxBuffer: 16 * 1024 * 1024 });
 }
 
-// Optional: quick binary intel for native files (strings + arch + imports + disasm).
+// Run Ghidra headless DecompileDump on a native binary.
+// Writes <func>.c files + _index.txt into outDir. Best-effort: throws on failure,
+// caller decides whether to fail the job or continue with static analysis only.
+async function runGhidra(inputFile, outDir) {
+  await fsp.mkdir(outDir, { recursive: true });
+  const projDir = await fsp.mkdtemp(path.join(require('os').tmpdir(), 'ghidra-proj-'));
+  const analyzeHeadless = path.join(GHIDRA_DIR, 'support', 'analyzeHeadless');
+  const args = [
+    projDir, 'auto_' + crypto.randomBytes(4).toString('hex'),
+    '-import', inputFile,
+    '-postScript', 'DecompileDump.java', outDir,
+    '-deleteProject',
+    '-scriptPath', GHIDRA_SCRIPTS,
+    '-max-cpu', String(Math.max(1, require('os').cpus().length - 1)),
+  ];
+  try {
+    await execFileAsync(analyzeHeadless, args, { timeout: GHIDRA_TIMEOUT_MS, maxBuffer: 32 * 1024 * 1024 });
+  } finally {
+    await fsp.rm(projDir, { recursive: true, force: true }).catch(() => {});
+  }
+  // Safety cap: drop biggest .c files if output explodes (protects VPS disk).
+  let total = 0;
+  const files = await fsp.readdir(outDir).catch(() => []);
+  const sized = [];
+  for (const f of files) {
+    if (!f.endsWith('.c')) continue;
+    const st = await fsp.stat(path.join(outDir, f)).catch(() => null);
+    if (st) { sized.push({ f, size: st.size }); total += st.size; }
+  }
+  if (total > GHIDRA_MAX_FUNCS_BYTES) {
+    sized.sort((a, b) => b.size - a.size);
+    for (const { f, size } of sized) {
+      if (total <= GHIDRA_MAX_FUNCS_BYTES) break;
+      await fsp.unlink(path.join(outDir, f)).catch(() => {});
+      total -= size;
+    }
+  }
+}
 // Note: jadx only handles Java/Dalvik — a stripped C/C++ ELF has no Java sources,
 // so for .so/.bin/.elf we return static analysis (imports/sections/disassembly) instead.
 async function analyzeNative(libPath) {
@@ -174,6 +216,17 @@ app.post('/api/decompile', upload.single('file'), async (req, res) => {
       // Native/raw binary: no Java sources guaranteed — return strings/arch intel + best-effort jadx.
       native = await analyzeNative(req.file.path);
       try { await runJadx(req.file.path, outDir); } catch {}
+      // Full decompile with Ghidra headless (slow: minutes). Failure is non-fatal:
+      // static analysis above still returns. Result lands in output/ghidra/*.c.
+      meta.status = 'running:ghidra';
+      try {
+        await runGhidra(req.file.path, path.join(outDir, 'ghidra'));
+        meta.ghidra = true;
+      } catch (err) {
+        meta.ghidra = false;
+        meta.ghidraError = String(err.message || err).slice(0, 200);
+      }
+      meta.status = 'running';
     } else {
       await runJadx(req.file.path, outDir);
     }
