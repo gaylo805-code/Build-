@@ -251,6 +251,11 @@ async function cleanupOldJobs() {
 }
 cron.schedule('*/10 * * * *', cleanupOldJobs);
 
+// ---- Landing page: serve the decompiler UI at / ----
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // ---- Start ----
 app.listen(PORT, () => {
   console.log(`[decompiler] API listening on :${PORT}`);
