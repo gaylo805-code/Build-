@@ -38,8 +38,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) {
-      // File tĩnh (public/index.html...)
-      return env.ASSETS.fetch(request);
+      return json({ server: 'neon-arcade', usage: 'API only — frontend đã xóa' }, 404);
     }
     await seedAdmin(env);
     const path = url.pathname.slice(4);
