@@ -109,7 +109,7 @@
 "use strict";
 /* ================= CONFIG ================= */
 // Default VPS endpoint — override in the header box (persisted to localStorage).
-const DEFAULT_API = "https://api.example.com"; // <-- CHANGE to your VPS URL
+const DEFAULT_API = "https://solo-agreement-penguin-introduction.trycloudflare.com"; // VPS backend (máy host)
 const apiInput = document.getElementById('apiBase');
 apiInput.value = localStorage.getItem('dec_api') || DEFAULT_API;
 const API = () => (localStorage.getItem('dec_api') || DEFAULT_API).replace(/\/$/, '');
