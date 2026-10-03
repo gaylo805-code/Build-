@@ -118,13 +118,32 @@ async function runJadx(inputFile, outDir) {
   await execFileAsync(JADX_BIN, args, { timeout: JADX_TIMEOUT_MS, maxBuffer: 16 * 1024 * 1024 });
 }
 
-// Optional: quick binary intel for .so files (strings + arch) without extra deps.
+// Optional: quick binary intel for native files (strings + arch + imports + disasm).
+// Note: jadx only handles Java/Dalvik — a stripped C/C++ ELF has no Java sources,
+// so for .so/.bin/.elf we return static analysis (imports/sections/disassembly) instead.
 async function analyzeNative(libPath) {
   try {
     const { stdout: fileOut } = await execAsync(`file -b ${JSON.stringify(libPath)}`).catch(() => ({ stdout: '' }));
     const { stdout: stringsOut } = await execAsync(
       `strings -n 6 ${JSON.stringify(libPath)} | head -n 200`, { maxBuffer: 2 * 1024 * 1024 }).catch(() => ({ stdout: '' }));
-    return { file: fileOut.trim(), strings: stringsOut.split('\n').filter(Boolean) };
+    // Imported functions (dynamic symbols) — closest thing to a "function list" for stripped ELFs.
+    const { stdout: importsOut } = await execAsync(
+      `readelf --dyn-syms -W ${JSON.stringify(libPath)} 2>/dev/null | awk '$4==\"FUNC\" && $8!=\"\" {print $8}' | sort -u | head -n 300`,
+      { maxBuffer: 2 * 1024 * 1024 }).catch(() => ({ stdout: '' }));
+    // Section list (helps locate .text/.rodata/...).
+    const { stdout: sectionsOut } = await execAsync(
+      `readelf -S -W ${JSON.stringify(libPath)} 2>/dev/null | head -n 60`).catch(() => ({ stdout: '' }));
+    // Disassembly of .text (Intel syntax), capped — real "code", just assembly not C source.
+    const { stdout: disasmOut } = await execAsync(
+      `objdump -d -M intel --no-show-raw-insn ${JSON.stringify(libPath)} 2>/dev/null | head -n 600`,
+      { maxBuffer: 4 * 1024 * 1024 }).catch(() => ({ stdout: '' }));
+    return {
+      file: fileOut.trim(),
+      strings: stringsOut.split('\n').filter(Boolean),
+      imports: importsOut.split('\n').filter(Boolean),
+      sections: sectionsOut.trim(),
+      disasm: disasmOut.trim(),
+    };
   } catch { return null; }
 }
 
