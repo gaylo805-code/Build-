@@ -50,7 +50,7 @@ app.use(cors({
 }));
 
 // ---- Multer: disk storage, strict file filter + size limit ----
-const ALLOWED_EXT = new Set(['.apk', '.dex', '.jar', '.so', '.class', '.zip', '.aar', '.apks', '.xapk']);
+const ALLOWED_EXT = new Set(['.apk', '.dex', '.jar', '.so', '.class', '.zip', '.aar', '.apks', '.xapk', '.bin', '.odex', '.oat', '.o', '.elf']);
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
@@ -151,8 +151,8 @@ app.post('/api/decompile', upload.single('file'), async (req, res) => {
     const ext = path.extname(req.file.originalname || '').toLowerCase();
     let native = null;
 
-    if (ext === '.so') {
-      // .so has no Java sources: return native analysis + still try jadx (harmless if it fails).
+    if (ext === '.so' || ext === '.bin' || ext === '.odex' || ext === '.oat' || ext === '.o' || ext === '.elf') {
+      // Native/raw binary: no Java sources guaranteed — return strings/arch intel + best-effort jadx.
       native = await analyzeNative(req.file.path);
       try { await runJadx(req.file.path, outDir); } catch {}
     } else {
