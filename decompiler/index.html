@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+  Online Decompiler — Static Frontend (deploy to Cloudflare Pages)
+  Single-file app: dark UI + drag&drop upload + file tree + highlighted viewer.
+  Deps via CDN: highlight.js (code highlight). No build step needed.
+  Config: edit API_BASE below to point at your VPS, e.g. https://api.example.com
+============================================================================= -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Decompiler — APK / DEX / JAR</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+  /* ---- Dark theme tokens ---- */
+  :root{--bg:#0b0e17;--panel:#12172a;--panel2:#0e1330;--line:#232c4d;--txt:#dbe4ff;
+    --mut:#8b96b8;--acc:#22d3ee;--acc2:#a78bfa;--ok:#34d399;--err:#fb7185;--warn:#fbbf24}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(900px 500px at 20% 0%,rgba(34,211,238,.12),transparent 60%),
+    radial-gradient(900px 500px at 90% 10%,rgba(167,139,250,.12),transparent 60%),var(--bg);
+    color:var(--txt);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,monospace;min-height:100vh}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;
+    padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;
+    background:rgba(11,14,23,.9);backdrop-filter:blur(8px);z-index:10}
+  .logo{font-weight:900;letter-spacing:2px;font-size:18px}
+  .logo span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .cfg{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--mut)}
+  .cfg input{background:#0a0e1f;border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:6px 10px;width:280px;font-size:12px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--warn);display:inline-block}
+  .dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  main{max-width:1400px;margin:0 auto;padding:18px;display:grid;gap:14px}
+  /* ---- Upload card ---- */
+  #drop{border:2px dashed #33406e;border-radius:16px;padding:28px;text-align:center;
+    background:linear-gradient(180deg,rgba(34,211,238,.05),transparent);cursor:pointer;transition:.2s}
+  #drop.over{border-color:var(--acc);background:rgba(34,211,238,.1);transform:scale(1.005)}
+  #drop h2{font-size:18px;margin-bottom:6px}
+  #drop p{color:var(--mut);font-size:13px}
+  #prog{height:8px;background:#1a2140;border-radius:99px;margin-top:14px;overflow:hidden;display:none}
+  #prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .2s}
+  #status{margin-top:10px;font-size:13px;min-height:20px;color:var(--mut)}
+  #status.err{color:var(--err)} #status.ok{color:var(--ok)}
+  /* ---- Workspace: sidebar + viewer ---- */
+  #work{display:grid;grid-template-columns:340px 1fr;gap:14px;min-height:60vh}
+  @media(max-width:900px){#work{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .card h3{padding:10px 14px;font-size:13px;letter-spacing:1px;border-bottom:1px solid var(--line);
+    display:flex;gap:8px;align-items:center;justify-content:space-between}
+  #search{background:#0a0e1f;border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:6px 10px;font-size:12px;width:170px}
+  #tree{padding:8px;max-height:70vh;overflow:auto;font-size:13px}
+  .tnode{user-select:none}
+  .tdir{cursor:pointer;padding:3px 6px;border-radius:6px;color:#9fd8ff;font-weight:700}
+  .tdir:hover{background:#1a2450}
+  .tfile{cursor:pointer;padding:3px 6px 3px 20px;border-radius:6px;color:var(--txt);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tfile:hover{background:#1a2450} .tfile.sel{background:rgba(34,211,238,.15);color:#fff}
+  .tkids{margin-left:14px;border-left:1px solid #22305c;padding-left:4px}
+  .hidden{display:none!important}
+  #viewer{display:flex;flex-direction:column;min-height:60vh}
+  #crumbs{padding:8px 14px;font-size:12px;color:var(--mut);border-bottom:1px solid var(--line);
+    white-space:nowrap;overflow:auto}
+  #code{flex:1;overflow:auto;max-height:70vh}
+  #code pre{margin:0} #code code{font-size:13px;line-height:1.55;background:transparent!important}
+  #meta{padding:8px 14px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}
+  footer{text-align:center;color:var(--mut);font-size:12px;padding:18px}
+  footer a{color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">⚙ ONLINE <span>DECOMPILER</span></div>
+  <div class="cfg">
+    <span id="healthDot" class="dot" title="backend status"></span>
+    <input id="apiBase" placeholder="https://api.example.com">
+    <button id="saveApi">Save</button>
+  </div>
+</header>
+
+<main>
+  <!-- Upload zone -->
+  <div id="drop">
+    <h2>📦 Drop APK / DEX / JAR / SO here or click to browse</h2>
+    <p>Max ~100MB (VPS limit) · decompiled with <b>jadx</b> on the server</p>
+    <input type="file" id="fileInput" accept=".apk,.dex,.jar,.so,.class,.zip,.aar,.apks,.xapk" hidden>
+    <div id="prog"><i></i></div>
+    <div id="status">Backend: checking…</div>
+  </div>
+
+  <!-- Explorer + viewer -->
+  <div id="work">
+    <div class="card">
+      <h3>📁 EXPLORER <input id="search" placeholder="🔍 filter classes…"></h3>
+      <div id="tree"><p style="color:var(--mut);padding:8px">Upload a file to see its classes.</p></div>
+    </div>
+    <div class="card" id="viewer">
+      <div id="crumbs">No file selected</div>
+      <div id="code"><pre><code class="language-java">// Decompiled source will appear here.
+// 1. Set your VPS API URL (top-right)  2. Upload a file  3. Click a .java file.</code></pre></div>
+      <div id="meta">—</div>
+    </div>
+  </div>
+</main>
+<footer>Backend: <code>/api/decompile</code> + <code>/api/file-content</code> (Express + jadx) · Frontend: static, deployable to <a href="https://pages.cloudflare.com">Cloudflare Pages</a></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+"use strict";
+/* ================= CONFIG ================= */
+// Default VPS endpoint — override in the header box (persisted to localStorage).
+const DEFAULT_API = "https://api.example.com"; // <-- CHANGE to your VPS URL
+const apiInput = document.getElementById('apiBase');
+apiInput.value = localStorage.getItem('dec_api') || DEFAULT_API;
+const API = () => (localStorage.getItem('dec_api') || DEFAULT_API).replace(/\/$/, '');
+document.getElementById('saveApi').onclick = () => {
+  localStorage.setItem('dec_api', apiInput.value.trim());
+  checkHealth();
+};
+
+/* ================= STATE ================= */
+let JOB_ID = null;      // current decompile job
+let TREE = null;        // full file tree from backend
+let ALL_FILES = [];     // flat list of {path,name} for search
+const $ = id => document.getElementById(id);
+
+/* ================= HEALTH CHECK ================= */
+async function checkHealth() {
+  const dot = $('healthDot'), st = $('status');
+  try {
+    const r = await fetch(API() + '/api/health');
+    const j = await r.json();
+    if (j.ok) { dot.classList.add('on'); st.textContent = `Backend OK · jadx ${j.jadx || ''} · max ${j.maxFileMB}MB`; st.className=''; }
+    else throw new Error('bad health');
+  } catch { dot.classList.remove('on'); st.textContent = 'Backend unreachable — check API URL (top-right).'; }
+}
+checkHealth();
+
+/* ================= UPLOAD (drag&drop + progress) ================= */
+const drop = $('drop'), fi = $('fileInput');
+drop.onclick = e => { if (e.target !== fi) fi.click(); };
+['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); });
+fi.onchange = () => { if (fi.files[0]) upload(fi.files[0]); };
+
+function upload(file) {
+  const st = $('status'), bar = $('prog'), fill = bar.querySelector('i');
+  bar.style.display = 'block'; fill.style.width = '5%';
+  st.className = ''; st.textContent = `Uploading ${file.name} (${(file.size/1048576).toFixed(1)}MB)…`;
+
+  // XHR (not fetch) so we can show upload progress events.
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', API() + '/api/decompile');
+  xhr.upload.onprogress = e => { if (e.lengthComputable) fill.style.width = (e.loaded/e.total*90).toFixed(0)+'%'; };
+  xhr.onload = () => {
+    fill.style.width = '100%';
+    try {
+      const j = JSON.parse(xhr.responseText);
+      if (xhr.status !== 200) throw new Error(j.error || ('HTTP '+xhr.status));
+      JOB_ID = j.jobId; TREE = j.tree;
+      flatten(TREE); renderTree($('search').value);
+      st.className = 'ok';
+      st.textContent = `✔ ${file.name}: ${j.fileCount} files (job ${JOB_ID.slice(0,8)}…)`;
+      if (j.native) showText('native-info.txt', `ARCH: ${j.native.file}\n\nSTRINGS (top 200):\n${j.native.strings.join('\n')}`, 'plaintext');
+    } catch (err) { st.className = 'err'; st.textContent = '✖ ' + err.message; }
+    setTimeout(() => bar.style.display = 'none', 800);
+  };
+  xhr.onerror = () => { st.className='err'; st.textContent = '✖ Network error — is the VPS API reachable/CORS allowed?'; bar.style.display='none'; };
+  const fd = new FormData(); fd.append('file', file, file.name);
+  xhr.send(fd);
+}
+
+/* ================= FILE TREE ================= */
+function flatten(node, out = []) {
+  // Collect all files for the search box.
+  for (const c of (node.children || [])) {
+    if (c.type === 'file') out.push(c);
+    else flatten(c, out);
+  }
+  ALL_FILES = out;
+}
+function matchesFilter(node, q) {
+  // Recursively keep dirs that contain a matching file.
+  q = q.toLowerCase();
+  if (node.type === 'file') return node.name.toLowerCase().includes(q) || node.path.toLowerCase().includes(q);
+  return (node.children || []).some(c => matchesFilter(c, q));
+}
+function renderTree(filter = '') {
+  const el = $('tree'); el.innerHTML = '';
+  if (!TREE) return;
+  const q = filter.trim();
+  el.appendChild(treeNode(TREE, q));
+}
+function treeNode(node, q) {
+  const wrap = document.createElement('div'); wrap.className = 'tnode';
+  if (node.type === 'dir') {
+    const kids = (node.children || []).filter(c => !q || matchesFilter(c, q));
+    if (q && !kids.length) return wrap; // prune non-matching branches
+    const d = document.createElement('div'); d.className = 'tdir';
+    d.textContent = (wrap.open === false ? '▶ ' : '▼ ') + '📁 ' + node.name;
+    const box = document.createElement('div'); box.className = 'tkids';
+    for (const c of kids) box.appendChild(treeNode(c, q));
+    d.onclick = () => { const hidden = box.classList.toggle('hidden'); d.textContent = (hidden?'▶ ':'▼ ') + '📁 ' + node.name; };
+    wrap.append(d, box);
+  } else {
+    const f = document.createElement('div'); f.className = 'tfile'; f.textContent = '📄 ' + node.name; f.title = node.path;
+    f.onclick = () => {
+      document.querySelectorAll('.tfile.sel').forEach(x => x.classList.remove('sel'));
+      f.classList.add('sel'); loadFile(node.path);
+    };
+    wrap.appendChild(f);
+  }
+  return wrap;
+}
+$('search').oninput = e => renderTree(e.target.value);
+
+/* ================= CODE VIEWER ================= */
+async function loadFile(relPath) {
+  $('crumbs').textContent = relPath;
+  $('meta').textContent = 'loading…';
+  try {
+    const r = await fetch(API() + '/api/file-content?jobId=' + encodeURIComponent(JOB_ID) + '&path=' + encodeURIComponent(relPath));
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
+    showText(relPath, j.content, langOf(relPath));
+    $('meta').textContent = `${relPath} · ${(j.content.length/1024).toFixed(1)} KB`;
+  } catch (err) { $('meta').textContent = '✖ ' + err.message; }
+}
+function langOf(p) {
+  // Map extension -> highlight.js language class.
+  if (p.endsWith('.java')) return 'java';
+  if (p.endsWith('.xml')) return 'xml';
+  if (p.endsWith('.json')) return 'json';
+  if (p.endsWith('.gradle')) return 'groovy';
+  if (/\.(c|cpp|h)$/.test(p)) return 'cpp';
+  if (p.endsWith('.smali')) return 'plaintext';
+  return 'plaintext';
+}
+function showText(name, content, lang) {
+  $('crumbs').textContent = name;
+  const code = document.querySelector('#code code');
+  code.className = 'language-' + lang;
+  code.textContent = content; // textContent = auto-escaped, XSS-safe
+  delete code.dataset.highlighted;
+  hljs.highlightElement(code);
+}
+</script>
+</body>
+</html>
