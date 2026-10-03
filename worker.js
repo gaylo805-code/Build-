@@ -28,7 +28,9 @@ async function me(request, env) {
   if (!t) return null;
   const name = await env.KV.get(K.sess(t));
   if (!name) return null;
-  return await getUser(env, name);
+  const u = await getUser(env, name);
+  if (!u) return null;
+  return { user: u, token: t };
 }
 const json = (o, st = 200) => new Response(JSON.stringify(o), { status: st, headers: { 'Content-Type': 'application/json' } });
 
@@ -68,19 +70,27 @@ export default {
       }
     }
 
-    const u = await me(request, env);
+    const auth = await me(request, env);
+    const u = auth?.user || null;
     if (!u) return json({ error: 'Chưa đăng nhập!' }, 401);
 
     if (path === '/me') return json({ user: pub(u) });
+    if (path === '/logout' && request.method === 'POST') {
+      if (auth.token) await env.KV.delete(K.sess(auth.token));
+      return json({ ok: true });
+    }
     if (path === '/spend' && request.method === 'POST') {
-      const { amount } = await request.json();
-      if (u.coins < amount) return json({ error: 'Hết coin!', coins: u.coins }, 402);
-      u.coins -= amount; await putUser(env, u);
+      const { amount } = await request.json().catch(() => ({}));
+      const n = amount | 0;
+      if (!n || n <= 0 || n > 100000) return json({ error: 'Số coin không hợp lệ!' }, 400);
+      if (u.coins < n) return json({ error: 'Hết coin!', coins: u.coins }, 402);
+      u.coins -= n; await putUser(env, u);
       return json({ coins: u.coins });
     }
     if (path === '/earn' && request.method === 'POST') {
-      const { amount } = await request.json();
-      u.coins += Math.max(0, amount | 0); await putUser(env, u);
+      const { amount } = await request.json().catch(() => ({}));
+      const n = Math.min(1000, Math.max(0, amount | 0)); // chặn hack coin: tối đa 1000/lần
+      u.coins += n; await putUser(env, u);
       return json({ coins: u.coins });
     }
     if (path === '/daily' && request.method === 'POST') {
@@ -90,11 +100,14 @@ export default {
       return json({ coins: u.coins });
     }
     if (path === '/hs' && request.method === 'POST') {
-      const { game, score } = await request.json();
+      const { game, score } = await request.json().catch(() => ({}));
+      const s = score | 0;
+      if (!game || typeof game !== 'string' || game.length > 32 || !s || s < 0 || s > 10000000)
+        return json({ error: 'Điểm không hợp lệ!' }, 400);
       const old = u.hs[game] || 0;
-      const isNew = score > old;
-      if (isNew) { u.hs[game] = score; await putUser(env, u); }
-      return json({ hs: Math.max(old, score), isNew });
+      const isNew = s > old;
+      if (isNew) { u.hs[game] = s; await putUser(env, u); }
+      return json({ hs: Math.max(old, s), isNew });
     }
     if (path === '/board') {
       const users = await getUsers(env);

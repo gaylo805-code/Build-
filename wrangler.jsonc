@@ -1,9 +1,14 @@
 {
-  // Web tĩnh: deploy thư mục public/ (index.html + mini.js)
-  // Muốn bật SERVER API (lưu tài khoản/coin tập trung) thì xem HD trong worker.js
+  // Deploy: npx wrangler kv namespace create KV  -> copy id vào kv_namespaces bên dưới
+  // Sau đó: npx wrangler deploy
   "name": "build",
   "compatibility_date": "2026-10-02",
+  "main": "./worker.js",
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    { "binding": "KV", "id": "PASTE_KV_NAMESPACE_ID_HERE" }
+  ]
 }
