@@ -6,6 +6,6 @@
   "compatibility_date": "2026-10-02",
   "main": "./worker.js",
   "kv_namespaces": [
-    { "binding": "KV", "id": "PASTE_KV_NAMESPACE_ID_HERE" }
+    { "binding": "KV", "id": "2821f488006c43b4a57f4e7d696328b7" }
   ]
 }
