@@ -64,6 +64,10 @@
   #code{flex:1;overflow:auto;max-height:70vh}
   #code pre{margin:0} #code code{font-size:13px;line-height:1.55;background:transparent!important}
   #meta{padding:8px 14px;font-size:12px;color:var(--mut);border-top:1px solid var(--line)}
+  #dlbar button{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.5);color:#7df9ff;
+    border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+  #dlbar button:hover:not(:disabled){background:rgba(34,211,238,.25)}
+  #dlbar button:disabled{opacity:.35;cursor:default}
   footer{text-align:center;color:var(--mut);font-size:12px;padding:18px}
   footer a{color:var(--acc)}
 </style>
@@ -96,6 +100,10 @@
     </div>
     <div class="card" id="viewer">
       <div id="crumbs">No file selected</div>
+      <div id="dlbar" style="display:flex;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line)">
+        <button id="btnDl" disabled>⬇ Tải file đang xem</button>
+        <button id="btnDlFull" disabled>⬇ Tải _full.c (tổng hợp)</button>
+      </div>
       <div id="code"><pre><code class="language-java">// Decompiled source will appear here.
 // 1. Set your VPS API URL (top-right)  2. Upload a file  3. Click a .java file.</code></pre></div>
       <div id="meta">—</div>
@@ -248,7 +256,23 @@ function showText(name, content, lang) {
   code.textContent = content; // textContent = auto-escaped, XSS-safe
   delete code.dataset.highlighted;
   hljs.highlightElement(code);
+  // Bật nút tải file đang xem.
+  CUR = name;
+  $('btnDl').disabled = false;
+  // Nút tải _full.c chỉ bật khi job có thư mục ghidra.
+  $('btnDlFull').disabled = !(ALL_FILES.some(f => f.path === 'ghidra/_full.c'));
 }
+// Tải 1 file bất kỳ từ job hiện tại qua endpoint /api/download (attachment).
+function download(relPath) {
+  if (!JOB_ID || !relPath) return;
+  const a = document.createElement('a');
+  a.href = API() + '/api/download?jobId=' + encodeURIComponent(JOB_ID) + '&path=' + encodeURIComponent(relPath);
+  a.download = relPath.split('/').pop();
+  document.body.appendChild(a); a.click(); a.remove();
+}
+let CUR = null; // file đang xem
+$('btnDl').onclick = () => download(CUR);
+$('btnDlFull').onclick = () => download('ghidra/_full.c');
 </script>
 </body>
 </html>

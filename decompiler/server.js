@@ -279,6 +279,21 @@ app.get('/api/file-content', async (req, res) => {
   res.json({ path: relPath, content: content.slice(0, 512 * 1024) });
 });
 
+// GET /api/download?jobId=..&path=.. — tải file về máy (attachment, không giới hạn preview).
+app.get('/api/download', async (req, res) => {
+  const { jobId, path: relPath } = req.query;
+  if (!jobId || !relPath) return res.status(400).json({ error: 'Missing jobId or path.' });
+  if (!isSafeRelPath(relPath)) return res.status(400).json({ error: 'Invalid path (traversal blocked).' });
+  const abs = path.join(JOBS_DIR, String(jobId), 'output', path.normalize(String(relPath)));
+  const root = path.join(JOBS_DIR, String(jobId), 'output');
+  if (!abs.startsWith(root + path.sep) && abs !== root) return res.status(400).json({ error: 'Invalid path.' });
+  let st;
+  try { st = await fsp.stat(abs); } catch { return res.status(404).json({ error: 'File not found.' }); }
+  if (!st.isFile()) return res.status(400).json({ error: 'Path is not a file.' });
+  if (st.size > 50 * 1024 * 1024) return res.status(413).json({ error: 'File too large to download (>50MB).' });
+  res.download(abs, path.basename(abs));
+});
+
 // ---- Central error handler (multer + CORS + generic) ----
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
