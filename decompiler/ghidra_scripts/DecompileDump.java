@@ -34,10 +34,21 @@ public class DecompileDump extends GhidraScript {
         FunctionIterator funcs = currentProgram.getFunctionManager().getFunctions(true);
         while (funcs.hasNext() && !monitor.isCancelled()) {
             Function f = funcs.next();
+            // Bỏ hàm thừa: thunk trỏ sang import (stub PLT) và hàm ngoài chương trình.
+            if (f.isThunk() || f.isExternal()) {
+                continue;
+            }
             String name = f.getName() + "@" + f.getEntryPoint().toString();
             DecompileResults res = decomp.decompileFunction(f, 60, monitor);
             if (res != null && res.decompileCompleted()) {
                 String code = res.getDecompiledFunction().getC();
+                // Bỏ chữ thừa: các dòng cảnh báo của Ghidra (kể cả thụt đầu dòng trong thân hàm).
+                code = code.replaceAll("(?m)^[ \\t]*/\\* WARNING[^\\n]*\\*/[ \\t]*\\n?", "");
+                // Bỏ hàm rỗng/stub: thân chỉ còn return hoặc trống.
+                String body = code.replaceAll("(?s)^.*?\\{", "{").trim();
+                if (body.matches("(?s)\\{\\s*(return\\s*[^;]*;)?\\s*\\}")) {
+                    continue;
+                }
                 ordered.add(new String[]{f.getEntryPoint().toString(), name, code});
                 String safe = f.getName().replaceAll("[^a-zA-Z0-9_.$-]", "_");
                 File out = new File(outDir, safe + ".c");
